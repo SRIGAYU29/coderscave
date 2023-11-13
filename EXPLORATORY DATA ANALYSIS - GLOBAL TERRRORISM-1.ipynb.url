@@ -1,6 +1,415 @@
-[InternetShortcut]
-URL=http://localhost:8889/notebooks/CODECAVERS/EXPLORATORY%20DATA%20ANALYSIS%20-%20GLOBAL%20TERRRORISM-1.ipynb
-IDList=
-HotKey=0
-IconFile=C:\Users\Personal\AppData\Local\Mozilla\Firefox\Profiles\jtm81fsg.default-release\shortcutCache\0b32knKQJThuGkg3RMr+ew==.ico
-IconIndex=0
+# 1. Exploratory Data Analysis - Terrorism
+
+
+
+import warnings
+warnings.filterwarnings('ignore')
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import plotly
+import plotly.express as px
+
+gt = pd.read_csv('globalterrorism.csv', encoding = 'ISO-8859-1')
+
+gt.head()
+
+gt.shape
+
+gt.columns
+
+gt['country_txt'].value_counts().head(20)
+
+gt.info()
+
+gt.describe()
+
+# DATA PROCESSING
+
+# to view all the columns in the dataframe
+pd.set_option('display.max_columns',None)
+gt.head()
+
+# to go back to defaoult value, need to use rest option
+# pd.reset_option('max_columns')
+
+# Renaming columns
+
+gt.rename(columns={'iyear':'Year','imonth':'Month','iday':'Day','country_txt':'Country','provstate':'state',
+'region_txt':'Region','attacktype1_txt':'AttackType','target1':'Target','nkill':'Killed',
+'nwound': 'Wounded','summary':'Summary','gname':'Group','targtype1_txt':'Target_type',
+'weaptype1_txt':'Weapon_type','motive':'Motive'},inplace=True)
+
+
+
+# As there a many columns , we can take the neccesary columns for analysis
+
+gt1 = gt[['eventid','Year','Month','Day','Country','Region','state','city','AttackType','Killed','Wounded',
+            'Target','Summary','Group','Target_type','Weapon_type','Motive','success','latitude','longitude']]
+
+#### Create a new column 'casualities' by adding 'killed' and 'wounded'
+
+gt1['casualities'] = gt1['Killed'] + gt1['Wounded'] 
+
+gt1['casualities'].value_counts()
+
+gt1.head(3)
+
+gt1.shape
+
+gt1.isnull().sum()
+
+
+
+gt1.describe()
+
+# Exploratory Data Analysis
+
+
+## Number of Terrorist Activity each year
+
+year_attacks = gt1.groupby('Year').size().reset_index(name = 'counts')
+year_attacks.head()
+
+gt1['Year'].unique()
+
+sns.lineplot(x = 'Year',y = 'counts',data = year_attacks,color = 'purple')
+plt.xlabel('Year')
+plt.ylabel('Number of Attacks')
+plt.title('Number of Terrorist Activity each year')
+plt.grid()
+
+plt.figure(figsize = (15,6))
+sns.countplot(data = gt1,x = 'Year',palette = 'tab10')
+plt.xlabel('Year')
+plt.xticks(rotation = 90)
+plt.ylabel('Number of Attacks')
+plt.title('Number of Terrorist Activity each year')
+plt.show()
+
+There has been a steady increase in global terrorist activities year by year. However, the year 2014 stands out as the peak with the highest recorded incidents. Encouragingly, there has been a subsequent decline in terrorist activity post-2014, offering hope for improved global security efforts.
+
+# Terrorist Attacks Trends in Regions
+
+year_attacks_region = gt1.groupby(['Year','Region']).size().reset_index(name = 'counts')
+year_attacks_region
+
+plt.subplots(figsize=(15,6))
+sns.lineplot(x='Year',y = 'counts',hue='Region',data=year_attacks_region)
+plt.title('Terrorist Attacks Trends in Regions')
+plt.xlabel('Year')
+plt.ylabel('Number of Attacks')
+plt.show()
+
+plt.subplots(figsize=(15,6))
+sns.countplot(x='Region',data=gt1,palette='inferno',order=gt1['Region'].value_counts().index) #order is given to view the value in descending order
+plt.xticks(rotation=90)
+plt.title('Number Of Terrorist Activities By Region')
+plt.show()
+
+Terrorism in the Middle East has experienced repeated increases year after year, largely due to ongoing geopolitical conflicts and the presence of extremist groups. South Asia has also witnessed a rise in terrorism, often linked to criminal organizations and drug trafficking. In contrast, Central Asia has comparatively lower terrorism rates
+
+# Top 10 Affected Countries
+
+plt.subplots(figsize=(12,6))
+top=gt1['Country'].value_counts()[:10].to_frame().reset_index()
+top.columns= ['Country','Attacks_Counts']
+sns.barplot(x='Country',y='Attacks_Counts', data= top, palette='magma')
+plt.title('Top Countries Affected')
+plt.xlabel('Countries')
+plt.ylabel('Count')
+plt.xticks(rotation=70)
+plt.show()
+
+The graph highlights five countries most affected by terrorism:
+
+1.Iraq
+
+2.Pakistan
+
+3.Afghanistan
+
+4.India
+
+5.Colombia
+
+These nations face significant challenges related to terrorism, requiring ongoing efforts to ensure the safety and security of their populations and regional stability.
+
+# Top 20 Affected Cities
+
+plt.subplots(figsize=(12,6))
+top=gt1['city'].value_counts()[:20].to_frame().reset_index()
+top.columns= ['city','Attacks_Counts']
+sns.barplot(x='city',y='Attacks_Counts', data= top, palette='magma')
+plt.title('Top city Affected')
+plt.xlabel('city')
+plt.ylabel('Count')
+plt.xticks(rotation=80)
+plt.show()
+
+# Attacking Methods by Terrorists
+
+plt.subplots(figsize=(15,6))
+sns.countplot(x='AttackType',data=gt1,palette='tab10',order = gt1['AttackType'].value_counts().index)
+plt.xticks(rotation=80)
+plt.title('Attacking Methods by Terrorists')
+plt.show()
+
+# Top Terrorists Group
+
+gt1['Group']
+
+group_counts = gt1['Group'].value_counts()
+sort = group_counts.sort_values(ascending=False)
+
+# Select the top 15 most frequent groups
+sort = sort.iloc[1:] # here we have started the index from 1 because index[0] is a unknown group,
+#so we cant do further process with that but it has a highest counts 
+top_15 = sort.head(15)
+
+sort
+
+top_15
+
+# Plotting top 15 terrorists groups
+
+plt.figure(figsize=(12, 6))
+sns.barplot(x=top_15.index, y=top_15.values, palette="magma")
+plt.title('Top Terrorist Attack Groups')
+plt.xlabel('Attack Count')
+plt.ylabel('Group')
+plt.xticks(rotation = 90)
+plt.show()
+
+The Taliban is a prominent terrorist group, but it's important to note that the global terrorism landscape is complex. Other significant terrorist groups, like ISIL, Al-Qaeda, Boko Haram, and Al-Shabaab, also operate in various regions, making it challenging to definitively label one as the "most active" worldwide. The prominence of these groups can change over time.
+
+# Activity of Top Terrorist Groups
+
+top_groups10=gt1[gt1['Group'].isin(gt1['Group'].value_counts()[1:11].index)]
+pd.crosstab(top_groups10.Year,top_groups10.Group).plot(color=sns.color_palette('Paired',10))
+fig=plt.gcf()
+fig.set_size_inches(16,6)
+plt.show()
+
+# Regions Attacked By Terrorist Groups
+
+!pip install basemap
+from mpl_toolkits.basemap import Basemap
+
+top_groups=gt1[gt1['Group'].isin(gt1['Group'].value_counts()[:14].index)]
+
+m4 = Basemap(projection='mill',llcrnrlat=-80,urcrnrlat=80, llcrnrlon=-180,urcrnrlon=180,lat_ts=20,resolution='c',lat_0=True,lat_1=True)
+m4.drawcoastlines()
+m4.drawcountries()
+m4.fillcontinents(lake_color='#fff')
+m4.drawmapboundary(fill_color='#fff')
+
+fig=plt.gcf()
+fig.set_size_inches(22,10)
+colors=['r','g','b','y','#800000','#ff1100','#8202fa','#20fad9','#ff5733','#fa02c6',"#f99504",'#b3b6b7','#8e44ad','#1a2b3c']
+group=list(top_groups['Group'].unique())
+
+def group_point(group,color,label):
+    lat_group=list(top_groups[top_groups['Group']==group].latitude)
+    long_group=list(top_groups[top_groups['Group']==group].longitude)
+    x_group,y_group=m4(long_group,lat_group)
+    m4.plot(x_group,y_group,'go',markersize=3,color=j,label=i)
+for i,j in zip(group,colors):
+    group_point(i,j,i)
+legend=plt.legend(loc='lower left',frameon=True,prop={'size':10})
+frame=legend.get_frame()
+frame.set_facecolor('white')
+plt.title('Regional Activities of Terrorist Groups')
+plt.show()
+
+# People Killed and Wounded In Each Year
+
+k=gt1[["Year","Killed"]].groupby("Year").sum()
+
+plt.figure(figsize=(10, 6))
+sns.barplot(x=k.index, y="Killed", palette="inferno",data=k)
+
+plt.title("Total Killings by Year")
+plt.xlabel("Year")
+plt.ylabel("Total Killings")
+
+plt.xticks(rotation=90)
+
+plt.tight_layout()
+plt.show()
+
+k=gt1[["Year","Wounded"]].groupby("Year").sum()
+
+
+plt.figure(figsize=(10, 6))
+sns.barplot(x=k.index, y="Wounded", palette="inferno",data=k)
+
+plt.title("Total Wounded by Year")
+plt.xlabel("Year")
+plt.ylabel("Total Wounded")
+
+plt.xticks(rotation=90)
+
+plt.tight_layout()
+plt.show()
+
+# People Killed and Wounded In Each Region
+
+k=gt1[["Region","Killed"]].groupby("Region").sum().sort_values(by="Killed",ascending=False)
+k
+
+w=gt1[["Region","Wounded"]].groupby("Region").sum().sort_values(by="Wounded",ascending=False)
+w
+
+fig=plt.figure()
+ax0=fig.add_subplot(1,2,1)
+ax1=fig.add_subplot(1,2,2)
+
+#People Killed
+k.plot(kind="bar",color="indigo",figsize=(15,6),ax=ax0)
+ax0.set_title("People Killed in each Region")
+ax0.set_xlabel("Regions")
+ax0.set_ylabel("Number of People Killed")
+
+#People Wounded
+w.plot(kind="bar",color="green",figsize=(15,6),ax=ax1)
+ax1.set_title("People Wounded in each Region")
+ax1.set_xlabel("Regions")
+ax1.set_ylabel("Number of People Wounded")
+
+plt.show
+
+# Types of terrorist attacks that cause deaths
+
+killData = gt1.loc[:,'Killed']
+print('Number of people killed by terror attack:', int(sum(killData.dropna())))# drop the NaN values   
+
+attackData = gt1.loc[:,'AttackType']
+typeKillData = pd.concat([attackData, killData], axis=1)
+typeKillFormatData = typeKillData.pivot_table(columns='AttackType', values='Killed', aggfunc='sum')
+typeKillFormatData
+
+labels = typeKillFormatData.columns.tolist() # convert line to list
+transpoze = typeKillFormatData.T # transpoze
+
+# Assuming values is a 2D array
+values = transpoze.values.tolist()
+values = np.array(values).flatten()  # Flatten the 2D array to make it 1D
+
+
+fig = plt.subplots(figsize=(20, 20))
+plt.pie(values, startangle=90, autopct='%.2f%%')
+plt.title('Types of terrorist attacks that cause deaths')
+plt.legend(labels, loc='upper right', bbox_to_anchor=(1.3, 0.9), fontsize=15)  # location legend
+plt.show()
+
+The combination of armed assaults and bombings/explosions is responsible for a significant 77% of fatalities in terrorist attacks. This highlights the persistent use of these tactics and underscores the global threat posed by weapons and explosives.
+
+# Yearly Casualities
+
+plt.subplots(figsize=(15,6))
+year_cas = gt1.groupby('Year').casualities.sum().to_frame().reset_index()
+year_cas.columns = ['Year','casualities']
+sns.barplot(x=year_cas.Year, y=year_cas.casualities, palette='magma')
+plt.xticks(rotation=90)
+plt.title('Number Of Casualities Each Year')
+plt.show()
+
+# Number of Total Casualities in Each Country
+
+
+plt.subplots(figsize=(15,6))
+count_cas = gt1.groupby('Country').casualities.sum().to_frame().reset_index().sort_values('casualities', ascending=False)[:15]
+sns.barplot(x=count_cas.Country, y=count_cas.casualities, palette= 'magma',edgecolor=sns.color_palette('dark',10))
+plt.xticks(rotation=30)
+plt.title('Number of Total Casualities in Each Country')
+plt.show()
+
+# Terrorist Attacks in India
+
+
+india_data = gt1[gt1['Country'] == 'India']
+
+# Get the top 14 terrorist groups in India
+top_groups = india_data['Group'].value_counts().head(14).index
+
+# Create a Basemap instance
+m4 = Basemap(
+    projection='mill',
+    llcrnrlat=-10,
+    urcrnrlat=40,
+    llcrnrlon=70,
+    urcrnrlon=100,
+    resolution='c',
+    lat_0=True,
+    lat_1=True
+)
+
+# Customize the map
+m4.drawcoastlines()
+m4.drawcountries()
+m4.fillcontinents(lake_color='#fff')
+m4.drawmapboundary(fill_color='#fff')
+
+# Set the figure size
+fig = plt.gcf()
+fig.set_size_inches(22, 10)
+
+# Define colors for plotting
+colors = ['r', 'g', 'b', 'y', '#800000', '#ff1100', '#8202fa', '#20fad9', '#ff5733', '#fa02c6', "#f99504", '#b3b6b7', '#8e44ad', '#1a2b3c']
+
+# Iterate through the top groups and plot their activities
+for group, color in zip(top_groups, colors):
+    group_data = india_data[india_data['Group'] == group]
+    x_group, y_group = m4(group_data['longitude'].values, group_data['latitude'].values)
+    m4.plot(x_group, y_group, 'go', markersize=3, color=color, label=group)
+
+# Add legend
+plt.legend(loc='lower left', frameon=True, prop={'size': 10})
+
+# Set the plot title
+plt.title('Regional Activities of Top Terrorist Groups in India')
+
+# Show the plot
+plt.show()
+
+India = gt1[(gt1['Country'] == 'India')]
+India.head(5)
+
+India_attacks = India['eventid'].count()
+print('There were',India_attacks ,'attacks in India.')
+
+India_success = India.groupby('success').size().reset_index(name='count')
+India_success['percentage'] = India_success['count'] / India_attacks * 100
+India_success
+
+sns.barplot(x='success', y='percentage', data = India_success,palette=['green', 'red'])
+plt.title("Outcome of Terrorist Attacks in India")
+plt.xlabel("Outcome")
+
+# Attack types in India and their success rates
+
+attack_types_India = India.groupby(['AttackType','success']).size().reset_index(name='count')
+attack_types_India
+
+plt.figure(figsize=(20,10))
+sns.barplot(x='AttackType', y='count', hue='success', data=attack_types_India,  palette= 'magma')
+plt.xticks(rotation=30)
+plt.title("Facility ")
+plt.show()
+
+kills_India = India.groupby('AttackType')[['Killed']].sum().reset_index()
+kills_India
+
+plt.figure(figsize=(30,10))
+sns.barplot(x='AttackType', y='Killed', data=kills_India,palette= 'magma')
+
+# Conclusion
+The global landscape is witnessing a concerning rise in the incidence of terrorism attacks, posing a growing threat to peace and security. This unsettling trend is particularly pronounced in two regions: the Middle East and North Africa, as well as South America, where the number of terrorist attacks has surged significantly.
+
+One of the striking aspects of this worrisome phenomenon is the high rate of success achieved by terrorist groups and individuals. Alarmingly, a staggering 89% of these attacks have been successful, resulting in a range of devastating consequences for the affected populations. This success rate underscores the effectiveness and persistence of these malicious actors in carrying out their destructive agendas.
+
+
+
+

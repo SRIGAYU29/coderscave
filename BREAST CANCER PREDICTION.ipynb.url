@@ -1,6 +1,123 @@
-[InternetShortcut]
-URL=http://localhost:8889/notebooks/CODECAVERS/BREAST%20CANCER%20PREDICTION.ipynb
-IDList=
-HotKey=0
-IconFile=C:\Users\Personal\AppData\Local\Mozilla\Firefox\Profiles\jtm81fsg.default-release\shortcutCache\PcpVgrSvZOOftiXL1kr0Ww==.ico
-IconIndex=0
+## Importing the Libraries
+
+import pandas as pd 
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
+
+## Data Collection and Processing
+
+data = pd.read_csv('breast cancer prediction.csv')
+data.head()
+
+data.shape
+
+data.info()
+
+data.isnull().sum()
+
+data = data.rename(columns = {'diagnosis': 'Diagnosis'})
+data.head()
+
+data.columns
+
+data['Diagnosis'].value_counts()
+
+data.corr()
+
+for i in data.columns:
+    if((data[i].dtype == 'int64') or (data[i].dtype == 'float64')):
+        sns.boxplot(data[i])
+        plt.xlabel(i)
+        plt.ylabel('count')
+        plt.show()
+
+#outlier removal 
+
+out_list = ['radius_mean', 'texture_mean', 'perimeter_mean','area_mean', 'smoothness_mean', 'compactness_mean', 'concavity_mean',
+'concave points_mean', 'symmetry_mean', 'fractal_dimension_mean','radius_se', 'texture_se', 'perimeter_se', 'area_se', 'smoothness_se',
+'compactness_se', 'concavity_se', 'concave points_se', 'symmetry_se','fractal_dimension_se', 'radius_worst', 'texture_worst',
+'perimeter_worst', 'area_worst', 'smoothness_worst','compactness_worst', 'concavity_worst', 'concave points_worst',
+'symmetry_worst', 'fractal_dimension_worst']
+
+for i in out_list:
+    Q1 = data[i].quantile(0.25)
+    Q3 = data[i].quantile(0.75)
+    
+    IQR = Q3-Q1
+    
+    data = data[(data[i]>= Q1-1.5*IQR) & (data[i]<= Q3+1.5*IQR)]
+
+data.reset_index(drop = True,inplace = True)
+
+for i in data.columns:
+    if((data[i].dtype == 'int64') or (data[i].dtype == 'float64')):
+        sns.boxplot(data[i])
+        plt.xlabel(i)
+        plt.ylabel('count')
+        plt.show()
+
+## Splitting the Features and Target
+
+x = data.drop(columns = 'Diagnosis')
+x
+
+y = data['Diagnosis']
+y
+
+x.shape
+
+y.shape
+
+## Splitting the Data into Training data & Test Data
+
+from sklearn.model_selection import train_test_split
+x_train,x_test,y_train,y_test = train_test_split(x,y,test_size = 40,random_state = 100)
+
+print(x_train.shape,x_test.shape,y_train.shape,y_test.shape)
+
+## Standardization of the data
+
+For this purpose we will use StandardScaler
+
+
+
+
+from sklearn.preprocessing import StandardScaler
+
+scaler = StandardScaler()
+
+
+x_train = scaler.fit_transform(x_train)
+
+x_test = scaler.transform(x_test)
+
+## Model Training : Logistic Regression
+
+
+
+# We performed hyper-parameter tuning
+
+log_reg = LogisticRegression(max_iter = 280, solver='liblinear', C=1.0)
+
+log_reg.fit(x_train, y_train)
+
+## Model evaluation: Accuracy score
+
+y_pred = log_reg.predict(x_test)
+
+y_pred
+
+y_test
+
+from sklearn.metrics import *
+accuracy_score(y_test,y_pred)
+
+confusion_matrix(y_test,y_pred)
+
+
+
+

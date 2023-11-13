@@ -1,0 +1,104 @@
+The goal of this project is to develop a robust email spam detection system using machine
+learning techniques. By analyzing the content and characteristics of emails, the system should
+be able to accurately classify incoming emails as either spam or legitimate (ham).
+
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+spam_df=pd.read_csv('emails.csv')
+
+spam_df.head()
+
+spam_df.head(10)
+
+spam_df.tail(10)
+
+spam_df.describe()
+
+spam_df.info()
+
+# Visualize the Data
+
+spam_df[spam_df['spam']==0] 
+
+spam_df[spam_df['spam']==1] 
+
+ham=spam_df[spam_df['spam']==0] #'0' denotes 'ham' ie. no-spam 
+
+spam=spam_df[spam_df['spam']==1] # '1' denotes 'spam'
+
+print('Spam Percentage =',(len(spam)/len(spam_df))*100,'%')
+
+print('ham Percentage =',(len(ham)/len(spam_df))*100,'%')
+
+sns.countplot(spam_df['spam'],label='Spam vs Ham')
+
+# Applying CountVectorizer to our Spam Ham Example
+
+from sklearn.feature_extraction.text import CountVectorizer  
+
+vectorizer = CountVectorizer()
+
+# 'fit' means understand the text data and 'transform' means convert it into binary data 
+spamham_countVectorizer = vectorizer.fit_transform(spam_df['text'])
+
+from sklearn.feature_extraction.text import CountVectorizer
+vectorizer=CountVectorizer()
+spamham_countVectorizer=vectorizer.fit_transform(spam_df['text'].values)
+
+print(spamham_countVectorizer)
+
+# Dividing the Cell for Training and Testing Prior to Training
+
+X = spamham_countVectorizer
+Y = spam_df['spam']
+
+X.shape
+
+Y.shape
+
+from sklearn.model_selection import train_test_split
+X_train, X_test, Y_train, Y_test = train_test_split(X,Y,test_size=0.2)
+
+from sklearn.naive_bayes import MultinomialNB
+
+NB_classifier=MultinomialNB()
+NB_classifier.fit(X_train, Y_train)
+
+# Evaluating The Model
+
+from sklearn.metrics import confusion_matrix, accuracy_score, roc_auc_score
+
+Y_predict_train = NB_classifier.predict(X_train)
+Y_predict_train
+
+Y_train.head()
+
+confusion_matrix(Y_train,Y_predict_train)
+
+roc_auc_score(Y_train,Y_predict_train)
+
+accuracy_score(Y_train,Y_predict_train)
+
+# Testing the model with new messages
+
+emails =[
+    'Hey mohan, can we get together to watch football game tomorrow?',
+    'Upto 20% discount on parking, exclusive offer just for you. Dont miss this reward!',
+    'Join the class at the scheduled time',
+    '''Dear Investor,
+With reference to NSE circular NSE/INSP/46704 dated December 17, 2020 and NSE/INSP/46960 dated January 08, 2021, Stock Brokers are required to upload clients fund balance and securities balance on weekly basis.
+Information pertaining to your fund and securities balance and last settlement date as on 11-06-22 provided by RKSV SECURITIES INDIA PRIVATE LIMITED. along with the details of securities ISIN wise is attached.
+''',
+    '''Dear Mohan, My uncle is a prince who has offered me large sums in inheritance. I would like to share this excellent opportunity and spread the wealth globally. Unfortunately I am unable to travel abroad and would like to seek your help in accessing the funds for the global good. Thank you, Prince. Reply immediately.
+'''
+]
+emails_count = vectorizer.transform(emails)
+emails_predict= NB_classifier.predict(emails_count)
+
+emails_predict
+
+
+
